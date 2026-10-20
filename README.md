@@ -1,4 +1,4 @@
-# Human Activity Recognition (HAR) using Data Mining, Machine Learning & Deep Learning
+# Human Activity Recognition (HAR) 
 
 A complete, modular, end-to-end pipeline for recognizing human physical activities from smartphone sensor data using the UCI HAR Dataset. The pipeline covers preprocessing, dimensionality reduction, supervised classification, unsupervised clustering, and evaluation.
 
