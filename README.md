@@ -4,7 +4,7 @@ A complete end-to-end pipeline for recognizing human physical activities from sm
 
 ---
 
-## 📌 Project Overview
+## Project Overview
 
 This project implements a modular Human Activity Recognition system that classifies six physical activities using accelerometer and gyroscope data collected from a waist-mounted smartphone. The pipeline covers preprocessing, dimensionality reduction, classification, clustering, and deep learning.
 
@@ -18,7 +18,7 @@ This project implements a modular Human Activity Recognition system that classif
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
     HAR-Project/
     │
