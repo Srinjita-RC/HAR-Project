@@ -1,40 +1,30 @@
 # Human Activity Recognition (HAR) 
 
-A complete, modular, end-to-end pipeline for recognizing human physical activities from smartphone sensor data using the UCI HAR Dataset. The pipeline covers preprocessing, dimensionality reduction, supervised classification, unsupervised clustering, and evaluation.
+An end-to-end pipeline that recognizes human physical activities from smartphone sensor data (UCI HAR Dataset). It covers preprocessing, dimensionality reduction, supervised classification, unsupervised clustering, and evaluation.
 
-## 📖 Project Overview
+## Project Overview
 
-This project classifies six physical activities using accelerometer and gyroscope readings collected from a waist-mounted smartphone. It compares interpretable baselines, classical machine learning models, and deep neural networks, and also explores unsupervised activity grouping with standard and hybrid clustering methods.
+This project classifies six physical activities from accelerometer and gyroscope readings collected by a waist-mounted smartphone. It compares a simple baseline, classical machine learning models and neural networks, and also explores unsupervised activity grouping with standard and hybrid clustering methods.
 
-**Activities recognized:**
-
-- Walking
-- Walking Upstairs
-- Walking Downstairs
-- Sitting
-- Standing
-- Laying
+**Activities recognized:** Walking, Walking Upstairs, Walking Downstairs, Sitting, Standing, Laying
 
 **Key contributions:**
 
-- A modular pipeline: data acquisition → preprocessing → feature reduction → classification & clustering → evaluation & visualization
-- A custom PyTorch MLP classifier (two hidden layers) trained on PCA-reduced features
-- A **Hybrid Distance-Filtered KMeans** clustering method that removes outliers before fitting centroids
+- A modular pipeline: data loading → preprocessing → feature reduction → classification & clustering → evaluation
+- A custom PyTorch MLP classifier (two hidden layers) trained on PCA-reduced features, reaching **92.91%** test accuracy
+- A **Hybrid Distance-Filtered KMeans** clustering experiment that removes outliers before fitting centroids
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 HAR-Project/
 │
-├── main.py               # Main pipeline runner
-├── preprocessing.py      # Data cleaning, normalization, PCA
-├── classification.py     # ML classification models
-├── clustering.py         # Clustering algorithms
-├── neural_network.py     # PyTorch deep learning model
-└── requirements.txt      # Dependencies
+├── HAR_Code.ipynb     # Full pipeline: preprocessing, classification, neural network, clustering
+├── UCI HAR Dataset/   # Dataset (downloaded separately, see below)
+└── README.md
 ```
 
-## 📊 Dataset
+## Dataset
 
 [UCI Human Activity Recognition Using Smartphones Dataset](https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones)
 
@@ -47,175 +37,127 @@ HAR-Project/
 | Windowing | 2.56 s fixed-width windows (128 samples/window) |
 | Labeling | Manual, via synchronized video annotation |
 | Records | 10,299 total (7,352 train / 2,947 test) |
-| Features | 561 original → 106 after cleaning + PCA |
+| Features | 561 original → 215 after cleaning → 106 after PCA |
 | Missing values | None |
 
-## ⚙️ Preprocessing Pipeline
+## Preprocessing Pipeline
 
-1. **Data Cleaning**: Removed duplicate samples, constant features, 84 duplicate features, and 262 highly correlated features (correlation threshold > 95%), leaving 215 features.
-2. **Handling Missing Values**: Any missing values are imputed with the feature median (the UCI HAR dataset itself has none).
-3. **Normalization**: Standard scaling (zero mean, unit variance).
-4. **Dimensionality Reduction**: PCA retaining ≥ 95% of the total variance, reducing 215 → **106** components.
-5. **Activity Labeling**: Integer labels are mapped to descriptive class names for interpretability.
+1. **Data Cleaning**: Removed 84 duplicate features and 262 highly correlated features (correlation > 95%), reducing 561 features to 215. The same features are removed from both train and test sets.
+2. **Normalization**: Standard scaling (zero mean, unit variance).
+3. **Dimensionality Reduction**: PCA keeping ≥ 95% of the total variance, reducing 215 → **106** components.
+4. **Activity Labeling**: Integer labels are mapped to activity names for readability.
 
-The same preprocessed, PCA-reduced feature matrix is used for every classifier and clustering model, so performance differences reflect the algorithms rather than data handling.
+The same preprocessed, PCA-reduced feature matrix is used for every classifier and clustering model, so performance differences reflect the algorithms and not the data handling.
 
-## 🤖 Classification
+## Classification
 
 ### Models
 
-- **Rule-Based Classifier**: assigns each sample to the activity whose mean total feature intensity (computed on training data) is closest. Serves as a lightweight baseline.
-- **Decision Tree**: interpretable but prone to overfitting on correlated signals.
+- **Rule-Based Classifier**: assigns each sample to the activity whose mean feature value (computed on training data) is closest. Serves as a simple baseline.
+- **Decision Tree**: interpretable, but prone to overfitting on correlated signals.
 - **Gaussian Naive Bayes**: assumes independent, normally distributed features.
 - **SVM (RBF kernel)**: learns non-linear decision boundaries.
-- **MLP (scikit-learn)**: multi-layer perceptron with ReLU activations.
-- **Proposed PyTorch Neural Network**: custom MLP (architecture below).
+- **MLP (scikit-learn)**: multi-layer perceptron (128, 64) with ReLU activations.
+- **Custom PyTorch Neural Network**: architecture below.
 
-### Results (UCI HAR test set)
+### Results (UCI HAR test set, 2,947 samples)
 
 | Model | Accuracy (%) | Precision (Macro) | Recall (Macro) | F1-Score (Macro) |
 |---|---|---|---|---|
-| Rule-Based Classifier | 28.50 | 0.27 | 0.28 | 0.26 |
-| Decision Tree | 71.06 | 0.71 | 0.70 | 0.70 |
-| Naive Bayes | 80.42 | 0.80 | 0.79 | 0.79 |
-| MLP (scikit-learn) | 92.10 | 0.91 | 0.91 | 0.91 |
-| Proposed PyTorch Neural Network | 92.70 | 0.92 | 0.92 | 0.92 |
-| **SVM (RBF Kernel)** | **94.30** | **0.94** | **0.94** | **0.94** |
+| Rule-Based Classifier | 28.47 | 0.271 | 0.284 | 0.269 |
+| Decision Tree | 71.06 | 0.711 | 0.705 | 0.706 |
+| Naive Bayes | 80.42 | 0.803 | 0.797 | 0.797 |
+| MLP (scikit-learn) | 92.70 | 0.925 | 0.925 | 0.925 |
+| Custom PyTorch Neural Network | 92.91 | 0.927 | 0.927 | 0.927 |
+| **SVM (RBF Kernel)** | **94.30** | **0.942** | **0.941** | **0.941** |
 
 **Takeaways:**
 
-- The SVM (RBF) and neural networks clearly outperform the rule-based, Decision Tree, and Naive Bayes baselines, confirming that non-linear models suit inertial sensor data.
-- The proposed PyTorch network (92.7%) comes close to the SVM (94.3%).
-- Remaining errors occur mostly between semantically similar activities (sitting vs. standing, and the three walking types), especially at transition windows.
+- The SVM and the neural networks clearly outperform the rule-based, Decision Tree and Naive Bayes models, showing that non-linear models suit inertial sensor data.
+- The custom PyTorch network (92.91%) comes close to the SVM (94.30%).
+- Laying is recognized almost perfectly (F1 ≈ 1.0). Most errors happen between similar activities: sitting vs. standing, and the three walking types.
+- The rule-based model (28.47%) is only slightly above random guessing (~17% for 6 classes), which confirms the task needs non-linear models.
 
-### Proposed PyTorch Neural Network Architecture
+### Custom PyTorch Neural Network Architecture
 
-- Input layer (106 PCA features)
+- Input layer: 106 PCA features
 - Hidden layer 1: 128 neurons, ReLU
 - Hidden layer 2: 64 neurons, ReLU
 - Output layer: 6 classes
-- Optimizer: Adam | Loss: CrossEntropyLoss | Epochs: 30 | Batch size: 32
+- Optimizer: Adam (lr = 0.001) | Loss: CrossEntropyLoss | Epochs: 30 | Batch size: 32
 
-## 🔍 Clustering
+**Note:** Training loss falls to almost 0 by epoch ~25 while test accuracy stays near 93%, which suggests mild overfitting. Dropout, early stopping and a validation split are natural next steps.
 
-All clustering methods run on the same PCA-reduced feature space (k = 6 for K-Means and the hybrid method).
+## Clustering
+
+All clustering methods run on the same PCA-reduced feature space (k = 6 for K-Means, Agglomerative and the hybrid method).
 
 - **K-Means**: centroid-based partitioning.
 - **Agglomerative Clustering**: hierarchical clustering with Ward linkage.
-- **DBSCAN**: density-based clustering that flags low-density points as outliers.
+- **DBSCAN**: density-based clustering (eps = 5, min_samples = 10) that flags low-density points as outliers.
 - **Hybrid Distance-Filtered KMeans (proposed)**:
-  1. **Outlier filtering**: compute each sample's average pairwise distance to all others and drop the samples above a threshold (e.g. the largest 10%).
-  2. **KMeans integration**: fit KMeans on the filtered core data.
-  3. **Label assignment**: assign every point, including filtered outliers, to its nearest centroid.
+  1. **Outlier filtering**: compute each sample's average distance to all others and drop the top 10% (90th-percentile threshold).
+  2. **KMeans**: fit K-Means on the filtered core data.
+  3. **Label assignment**: assign every point, including the filtered outliers, to its nearest centroid.
 
 ### Results
 
-| Method | Silhouette | Davies-Bouldin ↓ | Dunn Index ↑ |
-|---|---|---|---|
-| K-Means | 0.08 | 3.04 | 0.06 |
-| Agglomerative (Ward) | 0.05 | 3.52 | 0.10 |
-| DBSCAN | 0 | 0 | 0 |
-| Hybrid Distance-Filtered KMeans (proposed) | 0.07 | 3.17 | 0.07 |
+| Method | WCSS ↓ | Silhouette ↑ | Davies-Bouldin ↓ | Dunn Index ↑ |
+|---|---|---|---|---|
+| K-Means | 972,200 | 0.081 | 3.041 | 0.063 |
+| Agglomerative (Ward) | 1,003,917 | 0.052 | 3.527 | 0.108 |
+| DBSCAN | 1,502,851 | N/A | N/A | N/A |
+| Hybrid Distance-Filtered KMeans | 981,730 | 0.074 | 3.170 | 0.078 |
 
-All methods show fairly overlapping clusters (low Silhouette, high Davies-Bouldin), which is typical for noisy, high-dimensional wearable-sensor data. DBSCAN did not produce a valid multi-cluster result on this feature space, so its metrics are reported as 0.
+All methods produce heavily overlapping clusters (very low Silhouette, high Davies-Bouldin). This is expected because several activities (e.g. sitting and standing) give very similar sensor signals. The hybrid method gave results close to standard K-Means and did **not** clearly improve on it, so it is best seen as an exploratory idea. DBSCAN did not produce a valid multi-cluster result on this feature space, so its cluster-quality metrics are not available (N/A).
 
-## 📏 Evaluation Metrics
+## Evaluation Metrics
 
-- **Classification**: Accuracy, Precision, Recall, F1-score (macro-averaged), AUC, and confusion matrices
+- **Classification**: Accuracy, Precision, Recall, F1-score (macro-averaged), and confusion matrices
 - **Clustering**: Within-Cluster Sum of Squares (WCSS), Silhouette score, Davies-Bouldin index, Dunn index
 
-## 🛠️ Installation & Usage
+## Installation & Usage
 
-### 1. Clone the repository
+The code was developed and run in **Google Colab** (Python 3).
 
-```bash
-git clone https://github.com/khyati2107/HAR-Project.git
-cd HAR-Project
-```
+1. Download the dataset from the [UCI repository](https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones) as a ZIP file.
+2. Open `HAR_Code.ipynb` in Google Colab (or Jupyter).
+3. Run the cells in order. When prompted, upload the `UCI HAR Dataset.zip` file. The notebook extracts and loads it automatically.
 
-### 2. Create a virtual environment
+**Dependencies:** numpy, pandas, scipy, scikit-learn, matplotlib, seaborn, torch
 
-```bash
-python -m venv myenv
-myenv\Scripts\activate        # Windows
-# source myenv/bin/activate   # Linux / macOS
-```
+## Implementation Details
 
-### 3. Install dependencies
+- **Language & libraries**: Python, NumPy, Pandas, scikit-learn (preprocessing, PCA, baseline classifiers, clustering), PyTorch (custom neural network), Matplotlib & Seaborn (visualization)
+- **Environment**: Google Colab notebook
+- **Deployment**: models are evaluated offline only. The PyTorch model could be exported (e.g. to ONNX) for real-time use on Android or other edge devices.
 
-```bash
-pip install -r requirements.txt
-```
+## Limitations
 
-### 4. Download the dataset
+- Results use the single train/test split provided with the dataset, and subjects are not cross-validated.
+- The neural network shows signs of mild overfitting (see note above).
+- Clustering scores are low because similar activities overlap in feature space.
 
-Download the UCI HAR Dataset from: https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones
+## Future Work
 
-Extract it so your folder looks like:
+- CNN-LSTM and transformer models to capture temporal sequences and reduce errors at activity transitions
+- Regularization (dropout, early stopping) and a validation split for the neural network
+- Personalization and domain adaptation across users, devices and sensor placements
+- Multimodal HAR using extra sensors such as magnetometers
+- Explainable AI (feature importance, attention maps) and model compression for small wearable devices
 
-```
-HAR-Project/
-└── UCI HAR Dataset/
-    ├── train/
-    └── test/
-```
-
-### 5. Run the pipeline
-
-```bash
-python main.py --data_path "UCI HAR Dataset"
-```
-
-## 💻 Implementation Details
-
-- **Language & libraries**: Python 3.8+, NumPy, Pandas, scikit-learn (preprocessing, PCA, baseline classifiers, clustering), PyTorch (proposed neural network), Matplotlib & Seaborn (visualization)
-- **Environment**: Windows 11 and Ubuntu 22.04, run in Jupyter Notebook and Visual Studio Code
-- **Hardware used**: Intel Core i5 processor, 16 GB RAM, ≥ 10 GB free storage. No special server required; GPU acceleration (e.g. NVIDIA RTX 30-series) is optional for larger networks
-- **Deployment**: models are currently evaluated offline. The modular design allows exporting the PyTorch model (e.g. to ONNX) for real-time use on Android or other edge devices
-
-## 📦 Dependencies
-
-```
-numpy
-pandas
-scikit-learn
-matplotlib
-seaborn
-torch
-scipy
-```
-
-## 📈 Output Files
-
-All figures are saved automatically to the `outputs/` folder:
-
-- `pca_explained_variance.png`: cumulative explained variance (106 components capture > 95%)
-- `dataset_overview.png`: train vs. test feature distribution and activity distributions
-- `clustering_results.png`
-- `confusion_matrix_*.png`: one per model
-- `model_accuracy_comparison.png`
-- `neural_network_training_loss.png`
-- `neural_network_confusion_matrix.png`
-
-## 🔮 Future Work
-
-- CNN-LSTM and transformer models to capture temporal sequences and reduce transition-window errors
-- Personalization and domain adaptation across users, devices, and sensor placements
-- Multimodal HAR by adding sensors such as magnetometers or environmental data
-- Explainable AI (attention maps, feature importance) and model compression for deployment on small wearable and mobile devices
-
-## 📚 Reference
+## Reference
 
 UCI Machine Learning Repository: Human Activity Recognition Using Smartphones. https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones
 
 The full report, *Human Activity Recognition using Data Mining, Machine Learning, and Deep Learning*, contains the complete literature review and reference list.
 
-## 👥 Authors
+## Authors
 
 - **Khyati Prashant Jetly**: Dept. of Computer Science, BITS Pilani Dubai
 - **Srinjita Roy Chowdhury**: Dept. of Computer Science, BITS Pilani Dubai
 - **Soorya Kiran Kakkarayil**: Dept. of Computer Science, BITS Pilani Dubai
 
-## 🏫 Institution
+## Institution
 
 Birla Institute of Technology and Science, Pilani, Dubai Campus
